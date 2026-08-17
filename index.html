@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>3-Month Tracker</title>
+<style>
+  :root{
+    --bg:#12141a; --card:#1c2029; --card2:#232837; --accent:#5ec8a8; --accent2:#f2b84b;
+    --text:#f1f2f4; --muted:#9aa1ad; --line:#2c313f;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; padding-bottom:70px;}
+  header{position:sticky; top:0; z-index:20; background:var(--bg); padding:12px 16px 10px; border-bottom:1px solid var(--line);}
+  h1{font-size:1.0rem; margin:0 0 10px; font-weight:600;}
+  .picker-row{display:flex; gap:8px; margin-bottom:8px;}
+  select{
+    flex:1; background:var(--card); color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:8px; font-size:0.85rem; font-weight:600;
+  }
+  .tabs{display:flex; gap:8px;}
+  .tab{flex:1; text-align:center; padding:9px 4px; border-radius:10px; background:var(--card); color:var(--muted); font-weight:600; font-size:0.82rem; border:1px solid var(--line); cursor:pointer;}
+  .tab.active{background:var(--accent); color:#0d1410; border-color:var(--accent);}
+  main{padding:14px 16px 40px;}
+  .view{display:none;}
+  .view.active{display:block;}
+  .phase-banner{background:var(--card2); border-radius:10px; padding:8px 12px; font-size:0.78rem; color:var(--accent2); margin-bottom:12px;}
+  .section-title{font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin:18px 0 10px;}
+  details.warmup{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:6px;}
+  details.warmup summary{font-weight:600; cursor:pointer; font-size:0.9rem;}
+  details.warmup ul, details.warmup ol{margin:10px 0 0; padding-left:20px; color:var(--muted); font-size:0.85rem; line-height:1.5;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px;}
+  .card-head{display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
+  .ex-name{font-size:1.0rem; font-weight:700;}
+  .ex-target{font-size:0.8rem; color:var(--accent2); font-weight:700; white-space:nowrap;}
+  .cues{margin:8px 0 0; padding-left:18px; font-size:0.85rem; line-height:1.5; color:#dfe2e7;}
+  .cues li{margin-bottom:3px;}
+  .variant-note{font-size:0.76rem; color:var(--muted); margin-top:6px; font-style:italic;}
+  .last-time{margin-top:10px; background:rgba(94,200,168,0.08); padding:8px 8px 6px; border-radius:6px;}
+  .last-time-label{font-size:0.72rem; font-weight:700; color:var(--accent); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.03em;}
+  .last-time-sets{display:flex; flex-wrap:wrap; gap:6px;}
+  .lt-chip{background:var(--card2); border:1px solid var(--line); border-radius:6px; padding:4px 8px; font-size:0.74rem; color:#dfe2e7; white-space:nowrap;}
+  .set-log{margin-top:10px; border-top:1px solid var(--line); padding-top:10px;}
+  .set-log-row{display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:0.78rem; flex-wrap:wrap;}
+  .set-log-row .set-label{width:44px; color:var(--muted); font-weight:600;}
+  .set-log-row .side-label{width:14px; color:var(--muted); font-weight:600;}
+  .set-log-row .goal-hint{color:var(--muted); font-size:0.7rem; margin-right:2px;}
+  .set-log-row input{
+    width:56px; background:var(--card2); border:1px solid var(--line); color:var(--text);
+    border-radius:6px; padding:6px 4px; font-size:0.82rem; text-align:center;
+  }
+  .set-log-row .unit{color:var(--muted); font-size:0.72rem;}
+  .tap-done{
+    width:26px; height:26px; border-radius:6px; border:2px solid var(--line);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    color:var(--muted); font-weight:700; font-size:0.8rem; user-select:none;
+  }
+  .tap-done.done{background:var(--accent); border-color:var(--accent); color:#0d1410;}
+  .side-group{margin-bottom:4px; padding-left:4px; border-left:2px solid var(--line);}
+  footer{position:fixed; bottom:0; left:0; right:0; background:var(--card); border-top:1px solid var(--line); padding:8px 16px; font-size:0.7rem; color:var(--muted); text-align:center; display:flex; justify-content:space-between; align-items:center;}
+  .export-btn{background:var(--accent); color:#0d1410; border:none; border-radius:8px; padding:8px 14px; font-size:0.75rem; font-weight:700; cursor:pointer;}
+  .summary-ex-card .ex-name{margin-bottom:10px; display:block;}
+  .summary-month-label{font-size:0.72rem; color:var(--accent2); font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin:10px 0 6px;}
+  .summary-month-label:first-of-type{margin-top:0;}
+  .summary-month-grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; padding-bottom:8px; border-bottom:1px solid var(--line);}
+  .summary-week-col{font-size:0.68rem; color:#dfe2e7; line-height:1.4; overflow-wrap:break-word;}
+  .summary-week-col .wk-label{color:var(--muted); font-weight:700; font-size:0.66rem; margin-bottom:3px;}
+  .summary-week-col .wk-empty{color:var(--muted); font-style:italic;}
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:50; padding:20px;}
+  .overlay.show{display:flex;}
+  .overlay-box{background:var(--card); border-radius:12px; padding:16px; max-width:100%; width:100%; max-height:80vh; display:flex; flex-direction:column;}
+  .overlay-box h3{margin:0 0 10px; font-size:0.95rem;}
+  .overlay-box textarea{flex:1; background:var(--card2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:10px; font-size:0.72rem; resize:none;}
+  .overlay-actions{display:flex; gap:8px; margin-top:10px;}
+  .overlay-actions button{flex:1; padding:10px; border-radius:8px; border:none; font-weight:700; cursor:pointer;}
+  .btn-copy{background:var(--accent); color:#0d1410;}
+  .btn-close{background:var(--card2); color:var(--text); border:1px solid var(--line) !important;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>3-Month Full Body Tracker</h1>
+  <div class="picker-row">
+    <select id="monthPicker"></select>
+    <select id="weekPicker"></select>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-day="A">FB A</div>
+    <div class="tab" data-day="B">FB B</div>
+    <div class="tab" data-day="C">FB C</div>
+    <div class="tab" data-day="SUMMARY">Summary</div>
+  </div>
+</header>
+
+<main>
+  <div class="phase-banner" id="phaseBanner"></div>
+  <div id="workoutView" class="view active"></div>
+  <div id="summaryView" class="view"></div>
+</main>
+
+<footer>
+  <span>Tap the check box to mark a set done</span>
+  <button class="export-btn" id="exportBtn">Export</button>
+</footer>
+
+<div class="overlay" id="exportOverlay">
+  <div class="overlay-box">
+    <h3>Your logged data</h3>
+    <textarea id="exportText" readonly></textarea>
+    <div class="overlay-actions">
+      <button class="btn-copy" id="copyBtn">Copy to clipboard</button>
+      <button class="btn-close" id="closeBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- DATA MODEL ---------- */
+const EXERCISES = {
+  A: [
+    {id:'squat', name:'Goblet Squat', sets:3, type:'reps', target:'10', side:false,
+      cues:['Hold dumbbell vertically at chest, feet shoulder-width','Sit hips back and down, chest stays up','Knees track over toes, don\'t let them cave in','Drive through heels to stand back up'],
+      variant:'Gym: same movement, just a heavier dumbbell or barbell across the back.'},
+    {id:'rdl', name:'DB Romanian Deadlift', sets:3, type:'reps', target:'10', side:false,
+      cues:['Soft knees, dumbbells resting against the front of your thighs','Push hips straight back, lean forward, keep back flat','Lower until you feel a hamstring stretch (roughly mid-shin)','Drive hips forward to return to standing — this is a hinge, not a squat'],
+      variant:'Gym: same setup with a barbell, or use a trap bar.'},
+    {id:'press', name:'DB Floor Press / Push-up', sets:3, type:'reps', target:'10', side:false,
+      cues:['Floor press (home): lie on back, knees bent, elbows ~45° from body, press dumbbells up until arms extend, lower until upper arm taps the floor','Push-up (alt): hands under shoulders, straight line head-to-heels, lower chest just above the floor, press back up'],
+      variant:'Gym: bench press with a barbell or dumbbells for more range of motion.'},
+    {id:'row', name:'Band Row', sets:3, type:'reps', target:'12', side:false, weightIsText:true,
+      cues:['Anchor band at chest height, step back until there\'s tension','Pull handles to your ribs, elbows stay close to your body','Squeeze shoulder blades together at the end, control the return'],
+      variant:'Gym: seated cable row or DB row on a bench.'},
+    {id:'carry', name:'Farmer\'s Carry', sets:3, type:'time', target:'30 sec', side:false,
+      cues:['One dumbbell in each hand, stand tall, shoulders back, core braced','Walk with short, controlled steps — no side-to-side leaning','Set down with control, don\'t drop the weights'],
+      variant:'Gym: heavier dumbbells or kettlebells, or a trap bar carry.'},
+    {id:'calf', name:'Calf Raises', sets:3, type:'reps', target:'15', side:false,
+      cues:['Stand on a flat surface or the edge of a step, feet under hips','Rise onto your toes as high as you can, pause at the top','Lower with control until you feel a stretch in your calves'],
+      variant:'Home: hold a dumbbell in each hand for added load. Gym: calf raise machine, or a barbell/heavier dumbbells.'}
+  ],
+  B: [
+    {id:'lunge', name:'Reverse Lunge', sets:3, type:'reps', target:'10', side:true,
+      cues:['Step one foot back, lower until both knees are near 90°','Front knee stays over the ankle, not pushed past toes','Push through the front heel to return to standing','Alternate legs, or complete all reps on one side then switch'],
+      variant:'Gym: same movement, or try walking lunges down the floor.'},
+    {id:'bridge', name:'Glute Bridge', sets:3, type:'reps', target:'12', side:false,
+      cues:['Lie on your back, knees bent, feet flat, arms at your sides','Drive hips up by squeezing glutes — not by overarching your low back','Pause briefly at the top, then lower with control'],
+      variant:'Gym: add a dumbbell across your hips, or use the hip thrust machine.'},
+    {id:'shoulder', name:'DB Shoulder Press', sets:3, type:'reps', target:'10', side:false,
+      cues:['Dumbbells at shoulder height, palms facing forward','Press straight overhead until arms are extended, don\'t flare ribs up','Lower with control back to shoulder height'],
+      variant:'Gym: seated shoulder press machine or barbell overhead press.'},
+    {id:'row1arm', name:'Single-Arm DB Row', sets:3, type:'reps', target:'10', side:true,
+      cues:['Hinge forward, support yourself on a bench or sturdy chair with one hand/knee','Let the dumbbell hang, then pull your elbow back and up toward your hip','Squeeze your shoulder blade at the top, lower with control'],
+      variant:'Gym: same setup on a flat bench for more stability.'},
+    {id:'plank', name:'Plank', sets:3, type:'time', target:'30-40 sec', side:false,
+      cues:['Forearms on the floor, elbows under shoulders','Body forms a straight line from head to heels','Squeeze glutes and core — don\'t let hips sag or pike up']},
+    {id:'hanging', name:'Hanging Leg Raises', sets:3, type:'reps', target:'10', side:false,
+      cues:['Hang from a pull-up bar or sturdy overhead bar, arms fully extended','Raise your legs (knees bent is fine to start) until hips reach roughly 90°','Lower with control — avoid swinging or using momentum'],
+      variant:'No bar at home: substitute lying leg raises on the floor. Gym: hanging leg raise station or captain\'s chair.'}
+  ],
+  C: [
+    {id:'splitsquat', name:'Split Squat', sets:3, type:'reps', target:'10', side:true,
+      cues:['Feet staggered front-to-back, more stationary than a lunge','Lower straight down, torso stays upright','Front knee stays over the ankle','Push through the front heel to rise'],
+      variant:'Gym: try a Bulgarian split squat with the back foot elevated on a bench.'},
+    {id:'hipthrust', name:'Hip Thrust', sets:3, type:'reps', target:'12', side:false,
+      cues:['Upper back braced on a bench or sturdy couch edge, feet flat, knees bent','Drive hips up until torso is roughly parallel to the floor','Squeeze glutes hard at the top, then lower with control'],
+      variant:'Gym: same setup with a barbell across your hips for more load, or use the hip thrust machine.'},
+    {id:'inclinepush', name:'Incline Push-up (home) / DB Bench (gym)', sets:3, type:'reps', target:'10', side:false,
+      cues:['Incline push-up (home): hands on an elevated sturdy surface, body straight, lower chest toward the surface, press back up','DB bench (gym): lie on a bench, dumbbells at chest, press up until arms extend, lower with control']},
+    {id:'pulldown', name:'Band Pulldown (home) / Lat Pulldown (gym)', sets:3, type:'reps', target:'12', side:false, weightIsText:true,
+      cues:['Band (home): anchor band high, kneel or stand, pull handles down toward your chest, squeeze shoulder blades down and back','Lat pulldown (gym): grip the bar wide, pull down to upper chest, avoid leaning back excessively']},
+    {id:'suitcase', name:'Suitcase Carry', sets:3, type:'time', target:'30 sec', side:false,
+      cues:['Dumbbell in one hand at your side, like carrying a suitcase','Stand tall, resist leaning toward the weight — your core does the work','Walk controlled steps, then switch sides for the next set'],
+      variant:'Gym: heavier dumbbell or kettlebell for more core challenge.'},
+    {id:'tib', name:'Weighted Seated Single-Leg Tibialis Raise', sets:3, type:'reps', target:'15', side:false,
+      cues:['Sit on a bench or chair, one dumbbell resting on top of the foot near your toes, heel on the floor','Lift your toes/foot upward against the weight, lower with control','Switch legs between sets'],
+      variant:'Builds shin strength (tibialis anterior) — useful for the quick cuts in pickleball. Adjust weight independently per leg if needed.'}
+  ]
+};
+
+const DAY_LABEL = {A:'Full Body A', B:'Full Body B', C:'Full Body C'};
+// Program starts on Week 2 — Month 1 has only 3 weeks (2,3,4); Months 2–3 keep all 4 (5-8, 9-12).
+const WEEKS_BY_MONTH = { 1:[2,3,4], 2:[5,6,7,8], 3:[9,10,11,12] };
+const ALL_WEEKS = [].concat(WEEKS_BY_MONTH[1], WEEKS_BY_MONTH[2], WEEKS_BY_MONTH[3]);
+
+const WARMUP_ITEMS = [
+  'Light cardio (walk/march in place) — 3 min',
+  'Leg swings — 10 each leg, front-to-back and side-to-side',
+  'Hip circles — 10 each direction',
+  'Arm circles — 10 forward, 10 backward',
+  'Bodyweight squats — 10 reps, easy pace',
+  'Glute bridges — 10 reps, bodyweight'
+];
+const COOLDOWN_ITEMS = [
+  'Hip flexor stretch (kneeling lunge position)',
+  'Hamstring stretch (seated or standing toe reach)',
+  'Chest stretch (arm across doorway or wall)',
+  'Lat stretch (reach arm overhead, lean to the side)'
+];
+
+function phaseForWeek(w){
+  if (w<=4) return {label:'Phase 1 (Foundation)', note:'RPE 5–6, 2–3 sets, 10–12 reps. Focus: motor learning, adherence.'};
+  if (w<=8) return {label:'Phase 2 (Build)', note:'RPE 6–7, same 3 sets — progress by adding weight and/or reps each week.'};
+  return {label:'Phase 3 (Load)', note:'RPE 7–8, reps 6–10 on main lifts, 10–15 on accessories.'};
+}
+function monthOfWeek(w){ return Math.ceil(w/4); }
+function weekInMonth(w){
+  for(const m in WEEKS_BY_MONTH){
+    const idx = WEEKS_BY_MONTH[m].indexOf(w);
+    if(idx !== -1) return idx+1;
+  }
+  return null;
+}
+
+/* ---------- STORAGE ---------- */
+const STORE_KEY = 'wgTrackerV1';
+function loadStore(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }catch(e){ return {}; } }
+function saveStore(store){ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
+function slotKey(week, day, exId){ return `w${week}_${day}_${exId}`; }
+function getEntry(store, week, day, exId){ return store[slotKey(week,day,exId)] || null; }
+function setEntry(store, week, day, exId, data){ store[slotKey(week,day,exId)] = data; saveStore(store); }
+
+// One-time migration: program now starts at Week 2 instead of Week 1.
+// Whatever was logged under the old "Week 1" is your real first week — move it to
+// Week 2 instead of losing it. Never overwrites existing Week 2 data, and never
+// deletes Week 1 data unless it was safely copied first.
+function migrateWeek1ToWeek2(store){
+  const FLAG = 'wgTrackerWeekShiftV1_done';
+  if(localStorage.getItem(FLAG)) return;
+  let changed = false;
+  ['A','B','C'].forEach(day => {
+    EXERCISES[day].forEach(ex => {
+      const oldKey = slotKey(1, day, ex.id);
+      const newKey = slotKey(2, day, ex.id);
+      if(store[oldKey]){
+        if(!store[newKey]){
+          store[newKey] = store[oldKey];
+          delete store[oldKey];
+          changed = true;
+        }
+        // if Week 2 already had data, leave Week 1's entry in place rather than risk losing it
+      }
+    });
+  });
+  if(changed) saveStore(store);
+  localStorage.setItem(FLAG, '1');
+}
+
+/* ---------- STATE ---------- */
+let state = { month:1, week:2, day:'A' };
+let store = loadStore();
+migrateWeek1ToWeek2(store);
+
+/* ---------- POPULATE PICKERS ---------- */
+const monthPicker = document.getElementById('monthPicker');
+const weekPicker = document.getElementById('weekPicker');
+[1,2,3].forEach(m => { const o=document.createElement('option'); o.value=m; o.textContent='Month '+m; monthPicker.appendChild(o); });
+function refreshWeekPicker(){
+  weekPicker.innerHTML='';
+  WEEKS_BY_MONTH[state.month].forEach(w => {
+    const o=document.createElement('option'); o.value=w; o.textContent='Week '+w+' (wk '+weekInMonth(w)+' of month)';
+    weekPicker.appendChild(o);
+  });
+  weekPicker.value = state.week;
+}
+refreshWeekPicker();
+
+monthPicker.addEventListener('change', () => {
+  state.month = parseInt(monthPicker.value,10);
+  state.week = WEEKS_BY_MONTH[state.month][0];
+  refreshWeekPicker();
+  render();
+});
+weekPicker.addEventListener('change', () => {
+  state.week = parseInt(weekPicker.value,10);
+  render();
+});
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    state.day = tab.dataset.day;
+    render();
+  });
+});
+
+/* ---------- RENDER ---------- */
+function fmtWeight(w, ex){
+  if(!w) return '-';
+  return ex.weightIsText ? w : `${w}lb`;
+}
+
+// Used for the "Last time" hint during live logging — includes a done checkmark.
+function fmtSetSummary(entry, ex){
+  if(!entry) return null;
+  const parts = [];
+  for(let s=1; s<=ex.sets; s++){
+    const sd = entry['set'+s];
+    if(!sd) continue;
+    if(ex.side){
+      const L = sd.L, R = sd.R;
+      const lv = L && (L.val||L.weight) ? `L:${L.done?'✓':''}${L.val||'-'}${ex.type==='time'?'s':''}@${fmtWeight(L.weight,ex)}` : null;
+      const rv = R && (R.val||R.weight) ? `R:${R.done?'✓':''}${R.val||'-'}${ex.type==='time'?'s':''}@${fmtWeight(R.weight,ex)}` : null;
+      if(lv||rv) parts.push(`S${s} ${lv||''} ${rv||''}`.trim());
+    } else {
+      if(sd.val || sd.weight || sd.done) parts.push(`S${s} ${sd.done?'✓':''}${sd.val||'-'}${ex.type==='time'?'s':''}@${fmtWeight(sd.weight,ex)}`);
+    }
+  }
+  return parts.length ? parts.join('  ') : null;
+}
+
+// Used for the "Last time" hint on workout tabs — no checkmarks, one chip per set
+// (sides split onto separate chips too, so nothing runs together on one line).
+function fmtSetChips(entry, ex){
+  if(!entry) return null;
+  const unit = ex.type==='time' ? 'sec' : 'reps';
+  const chips = [];
+  for(let s=1; s<=ex.sets; s++){
+    const sd = entry['set'+s];
+    if(!sd) continue;
+    if(ex.side){
+      const L = sd.L, R = sd.R;
+      if(L && (L.val||L.weight)) chips.push(`S${s} L: ${L.val||'-'} ${unit} @ ${fmtWeight(L.weight,ex)}`);
+      if(R && (R.val||R.weight)) chips.push(`S${s} R: ${R.val||'-'} ${unit} @ ${fmtWeight(R.weight,ex)}`);
+    } else {
+      if(sd.val || sd.weight) chips.push(`S${s}: ${sd.val||'-'} ${unit} @ ${fmtWeight(sd.weight,ex)}`);
+    }
+  }
+  return chips.length ? chips : null;
+}
+
+// Used on the Summary page — compact, no checkmarks, one line per set.
+function fmtSetLinesCompact(entry, ex){
+  if(!entry) return null;
+  const lines = [];
+  for(let s=1; s<=ex.sets; s++){
+    const sd = entry['set'+s];
+    if(!sd) continue;
+    if(ex.side){
+      const L = sd.L, R = sd.R;
+      const lv = L && (L.val||L.weight) ? `L${L.val||'-'}@${fmtWeight(L.weight,ex)}` : '';
+      const rv = R && (R.val||R.weight) ? `R${R.val||'-'}@${fmtWeight(R.weight,ex)}` : '';
+      if(lv||rv) lines.push(`S${s} ${lv} ${rv}`.trim());
+    } else {
+      if(sd.val || sd.weight) lines.push(`S${s} ${sd.val||'-'}@${fmtWeight(sd.weight,ex)}`);
+    }
+  }
+  return lines.length ? lines : null;
+}
+
+function setLogRow(ex, week, day, s, side, entry){
+  const key = side || 'none';
+  const sd = side ? ((entry['set'+s] && entry['set'+s][side]) || {}) : (entry['set'+s] || {});
+  const isTime = ex.type === 'time';
+  const valUnit = isTime ? 'sec' : 'reps';
+  let row = `<div class="set-log-row">
+    <span class="set-label">Set ${s}</span><span class="side-label">${side||''}</span>`;
+  if(isTime){
+    row += `<span class="goal-hint">Goal ${ex.target}</span>`;
+  }
+  row += `<input type="number" inputmode="decimal" placeholder="${valUnit}" value="${sd.val||''}"
+      data-ex="${ex.id}" data-set="${s}" data-side="${key}" data-field="val">
+    <span class="unit">${valUnit}</span>
+    <div class="tap-done${sd.done?' done':''}" data-ex="${ex.id}" data-set="${s}" data-side="${key}" data-field="done">✓</div>`;
+  if(ex.weightIsText){
+    row += `<input type="text" placeholder="band color" value="${sd.weight||''}"
+        data-ex="${ex.id}" data-set="${s}" data-side="${key}" data-field="weight">
+      <span class="unit">band</span>
+    </div>`;
+  } else {
+    row += `<input type="number" inputmode="decimal" placeholder="lb" value="${sd.weight||''}"
+        data-ex="${ex.id}" data-set="${s}" data-side="${key}" data-field="weight">
+      <span class="unit">lb</span>
+    </div>`;
+  }
+  return row;
+}
+
+function buildSetLogHTML(ex, week, day){
+  const entry = getEntry(store, week, day, ex.id) || {};
+  let html = '<div class="set-log">';
+  for(let s=1; s<=ex.sets; s++){
+    if(ex.side){
+      html += `<div class="side-group">`;
+      html += setLogRow(ex, week, day, s, 'L', entry);
+      html += setLogRow(ex, week, day, s, 'R', entry);
+      html += `</div>`;
+    } else {
+      html += setLogRow(ex, week, day, s, null, entry);
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+function warmupHTML(){
+  return `<details class="warmup">
+    <summary>Warm-up (5–8 min, do first, not counted in workout time)</summary>
+    <ol>${WARMUP_ITEMS.map(i=>`<li>${i}</li>`).join('')}</ol>
+  </details>`;
+}
+function cooldownHTML(){
+  return `<details class="warmup">
+    <summary>Cool-down (5–10 min, do last, not counted in workout time)</summary>
+    <ul>${COOLDOWN_ITEMS.map(i=>`<li>${i}</li>`).join('')}</ul>
+  </details>`;
+}
+
+function renderWorkout(day, week){
+  const exs = EXERCISES[day];
+  let html = warmupHTML();
+  html += `<div class="section-title">${DAY_LABEL[day]} — Week ${week}</div>`;
+  exs.forEach(ex => {
+    const prevEntry = week>1 ? getEntry(store, week-1, day, ex.id) : null;
+    const prevChips = fmtSetChips(prevEntry, ex);
+    html += `<div class="card">
+      <div class="card-head"><span class="ex-name">${ex.name}</span><span class="ex-target">${ex.sets}${ex.side?'/side':''} × ${ex.target}</span></div>
+      <ul class="cues">${ex.cues.map(c=>`<li>${c}</li>`).join('')}</ul>
+      ${ex.variant?`<div class="variant-note">${ex.variant}</div>`:''}
+      ${prevChips?`<div class="last-time"><div class="last-time-label">Last time (Wk ${week-1})</div><div class="last-time-sets">${prevChips.map(c=>`<span class="lt-chip">${c}</span>`).join('')}</div></div>`:''}
+      ${buildSetLogHTML(ex, week, day)}
+    </div>`;
+  });
+  html += `<div class="section-title">Cool-down</div>` + cooldownHTML();
+  document.getElementById('workoutView').innerHTML = html;
+
+  document.querySelectorAll('#workoutView input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const exId = inp.dataset.ex, setN = inp.dataset.set, side = inp.dataset.side, field = inp.dataset.field;
+      const entry = getEntry(store, week, day, exId) || {};
+      entry['set'+setN] = entry['set'+setN] || {};
+      if(side==='none'){
+        entry['set'+setN][field] = inp.value;
+      } else {
+        entry['set'+setN][side] = entry['set'+setN][side] || {};
+        entry['set'+setN][side][field] = inp.value;
+      }
+      setEntry(store, week, day, exId, entry);
+    });
+  });
+
+  document.querySelectorAll('#workoutView .tap-done').forEach(box => {
+    box.addEventListener('click', () => {
+      const exId = box.dataset.ex, setN = box.dataset.set, side = box.dataset.side;
+      const entry = getEntry(store, week, day, exId) || {};
+      entry['set'+setN] = entry['set'+setN] || {};
+      let target;
+      if(side==='none'){
+        target = entry['set'+setN];
+      } else {
+        entry['set'+setN][side] = entry['set'+setN][side] || {};
+        target = entry['set'+setN][side];
+      }
+      target.done = !target.done;
+      box.classList.toggle('done', !!target.done);
+      setEntry(store, week, day, exId, entry);
+    });
+  });
+}
+
+function renderSummary(){
+  let html = '';
+  ['A','B','C'].forEach(day => {
+    html += `<div class="section-title">Summary — Full Body ${day}</div>`;
+    EXERCISES[day].forEach(ex => {
+      html += `<div class="card summary-ex-card"><span class="ex-name">${ex.name}</span>`;
+      for(let m=1; m<=3; m++){
+        const weeks = WEEKS_BY_MONTH[m];
+        html += `<div class="summary-month-label">Month ${m}</div><div class="summary-month-grid" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))">`;
+        weeks.forEach(w => {
+          const entry = getEntry(store, w, day, ex.id);
+          const lines = fmtSetLinesCompact(entry, ex);
+          html += `<div class="summary-week-col"><div class="wk-label">Wk${w}</div>`;
+          html += lines ? lines.map(l=>`<div>${l}</div>`).join('') : `<div class="wk-empty">—</div>`;
+          html += `</div>`;
+        });
+        html += `</div>`;
+      }
+      html += `</div>`;
+    });
+  });
+  document.getElementById('summaryView').innerHTML = html;
+}
+
+function render(){
+  const phase = phaseForWeek(state.week);
+  document.getElementById('phaseBanner').textContent = `${phase.label} — ${phase.note}`;
+  if(state.day === 'SUMMARY'){
+    document.getElementById('workoutView').classList.remove('active');
+    document.getElementById('summaryView').classList.add('active');
+    renderSummary();
+  } else {
+    document.getElementById('summaryView').classList.remove('active');
+    document.getElementById('workoutView').classList.add('active');
+    renderWorkout(state.day, state.week);
+  }
+}
+render();
+
+/* ---------- EXPORT ---------- */
+document.getElementById('exportBtn').addEventListener('click', () => {
+  let out = '3-Month Full Body Tracker — Export\n\n';
+  ALL_WEEKS.forEach(w => {
+    out += `Month ${monthOfWeek(w)}, Week ${w}\n`;
+    ['A','B','C'].forEach(day => {
+      out += `  Full Body ${day}\n`;
+      EXERCISES[day].forEach(ex => {
+        const entry = getEntry(store, w, day, ex.id);
+        const summary = fmtSetSummary(entry, ex);
+        if(summary) out += `    ${ex.name}: ${summary}\n`;
+      });
+    });
+    out += '\n';
+  });
+  document.getElementById('exportText').value = out;
+  document.getElementById('exportOverlay').classList.add('show');
+});
+document.getElementById('closeBtn').addEventListener('click', () => {
+  document.getElementById('exportOverlay').classList.remove('show');
+});
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const ta = document.getElementById('exportText');
+  ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  if(navigator.clipboard){ navigator.clipboard.writeText(ta.value).catch(()=>{}); }
+  document.getElementById('copyBtn').textContent = 'Copied!';
+  setTimeout(()=>{ document.getElementById('copyBtn').textContent='Copy to clipboard'; }, 1500);
+});
+</script>
+
+</body>
+</html>
